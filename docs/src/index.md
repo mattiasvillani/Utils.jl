@@ -1,10 +1,13 @@
 # Utils.jl
 
-Documentation for Utils.jl
+## Purpose
 
+The Utils.jl package contains general utility functions.
 
-```@docs
-unpickle
-invvech
-invvech_byrow
+## Index
+
+```@index
 ```
+
+
+
