@@ -1,12 +1,13 @@
 push!(LOAD_PATH,"../src/")
 
 using Documenter
-using SpecTools
+using SpecTools, Distributions
 
 makedocs(
     sitename = "Utils",
+    modules = [Utils],
     format = Documenter.HTML(prettyurls = false),
-    doctest = true,
+    doctest = false, # disabling for now since there is some issue with modules here
     pages = Any[
         "Home" => "index.md",
         "Data/array manipulation" => "ArrayManip.md",

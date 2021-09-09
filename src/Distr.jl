@@ -1,6 +1,6 @@
 # Some distributions not available in Distributions.jl
 
-using Distributions: InverseGamma, LocationScale, TDist
+using Distributions: InverseGamma, LocationScale, TDist, pdf
 
 """ 
     ScaledInverseChiSq(ν,τ²) 
@@ -42,3 +42,4 @@ TDist(μ, σ, ν) = LocationScale(μ, σ, TDist(ν))
 
 
 export ScaledInverseChiSq, TDist
+
