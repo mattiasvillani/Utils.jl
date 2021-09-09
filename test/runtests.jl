@@ -1,6 +1,5 @@
-using Utils
+using Utils, Distributions
 using Test
 
-@testset "Utils.jl" begin
-    # Write your tests here.
-end
+include("UtilsTest.jl")
+include("DistrTest.jl")

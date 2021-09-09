@@ -1,7 +1,7 @@
 module Utils
 
 # Python functions import
-using PyCall, LinearAlgebra
+using PyCall, LinearAlgebra, Distributions
 
 include("Distr.jl") # some extra distributions
 
