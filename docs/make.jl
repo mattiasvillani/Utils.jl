@@ -1,7 +1,7 @@
 push!(LOAD_PATH,"../src/")
 
 using Documenter
-using SpecTools, Distributions
+using Utils, Distributions
 
 makedocs(
     sitename = "Utils",
