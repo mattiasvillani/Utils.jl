@@ -1,4 +1,5 @@
 # IO
 ```@docs
 unpickle
+plotFcnGrid
 ```

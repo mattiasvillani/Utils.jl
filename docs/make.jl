@@ -1,7 +1,9 @@
 push!(LOAD_PATH,"../src/")
 
 using Documenter
-using Utils, Distributions
+using Utils, Distributions, Statistics
+
+#DocMeta.setdocmeta!(Utils, :DocTestSetup, :(using Utils, Statistics, Distributions); recursive=true)
 
 makedocs(
     sitename = "Utils",

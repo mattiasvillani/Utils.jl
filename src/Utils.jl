@@ -96,7 +96,9 @@ end
 
 
 """
-    Plotting a function of a 1D or 2D grid
+    plotFcnGrid(f, xGrid, xNames, fcnArgs...;ylabel="", title ="", levels = 10,fill=:viridis)
+
+Plotting a function of a 1D or 2D grid.
 """
 function plotFcnGrid(f, xGrid, xNames, fcnArgs...;ylabel="", title ="",
         levels = 10, fill=:viridis)

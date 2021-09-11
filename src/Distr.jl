@@ -12,6 +12,8 @@ This is a convenience function that is just calling InverseGamma(ν/2,ν*τ²/2)
 
 # Examples
 ```jldoctest
+julia> using Statistics: mean;
+julia> using Distributions: pdf;
 julia> dist = ScaledInverseChiSq(10,3^2);
 julia> mean(dist)
 11.25
@@ -31,6 +33,8 @@ The distribution is parameterized so that the variance is σ²ν/(ν-2). The dis
 
 # Examples
 ```jldoctest
+julia> using Statistics: mean;
+julia> using Distributions: pdf;
 julia> dist = TDist(1, 2, 5)
 julia> mean(dist) 
 1.0
