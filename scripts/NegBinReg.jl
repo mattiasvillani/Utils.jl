@@ -1,15 +1,75 @@
-# Posterior sampling from the negative binomial regression model
-#
+# Main file for posterior sampling from the negative binomial regression model
 #    yᵢ | β,τ ∼ NegativeBinomial(exp(τ), logit(xᵢ'β))
-#
-#    with prior
-#
 #    β ∼ N(μᵦ,Ωᵦ) and τ ∼ N(μₜ,σₜ)
 
 using Distributions, LaTeXStrings, Plots, LinearAlgebra, PDMats, StatsPlots
 using ForwardDiff, Optim, ProgressMeter, MCMCChains, AdvancedMH, KernelDensity
 import ColorSchemes: Paired_12; colors = Paired_12[[1,2,7,8,3,4,5,6,9,10]]
-include("/home/mv/Dropbox/CurrentCode/UtilJulia/FiniteNewtonMH.jl")
+
+"""
+    PostSampNegBinReg(y, X, priorSet, algoSet)
+    
+Gibbs sampling with finite step Newton for negative binomial regression:
+yᵢ | β,τ ∼ NegativeBinomial(exp(τ), logit(xᵢ'β))
+with prior β ∼ N(μᵦ,Ωᵦ) and τ ∼ N(μₜ,σₜ)
+"""
+function PostSampNegBinReg(y, X, priorSet, algoSet)
+    
+    # Unpack algorithmic settings
+    nIter, fracBurnin, nNewton, df = algoSet
+    nBurnin = Int(floor(fracBurnin*nIter))
+    nIter += nBurnin
+
+    # Unpack prior settings
+    μᵦ, Ωᵦ, μₜ, σₜ = priorSet
+
+    # Initial values
+    τ = 0
+    β = zeros(size(X,2))
+
+    # Set up full conditional for β with gradient and Hessian functions using AD.
+    πᵦargs = [y,X,τ]
+    function ℓπᵦ(β, πᵦargs...)
+        p = exp.(X*β)./(1 .+ exp.(X*β))
+        logLik = sum( logpdf.(NegativeBinomial.(exp(τ), p), y) )
+        logPrior = logpdf(MvNormal(μᵦ, Ωᵦ), β)
+        return logLik + logPrior
+    end
+    ∇ᵦ(β,πᵦargs...) = ForwardDiff.gradient(β -> ℓπᵦ(β, πᵦargs...), β)
+    Hᵦ(β,πᵦargs...) = ForwardDiff.hessian(β -> ℓπᵦ(β, πᵦargs...), β)
+
+    # Set up full conditional for τ with gradient and Hessian functions using AD.
+    πₜargs = [y,X,β]
+    function ℓπₜ(τ, πₜargs...)
+        p = exp.(X*β)./(1 .+ exp.(X*β))
+        logLik = sum( logpdf.(NegativeBinomial.(exp(τ), p), y) )
+        logPrior = logpdf(Normal(μₜ,σₜ), τ)
+        return logLik + logPrior
+    end
+    ∇ₜ(τ,πₜargs...) = ForwardDiff.derivative(τ -> ℓπₜ(τ, πₜargs...), τ)
+    Hₜ(τ,πₜargs...) = ForwardDiff.derivative(τ -> ∇ₜ(τ,πₜargs...), τ)
+
+    # Set up storage 
+    βpost = zeros(size(X,2), nIter)
+    τpost = zeros(nIter)
+    ᾱ = zeros(2)  # Mean MH acceptance probability
+
+    for i = 1:nIter
+        # Sample τ
+        τ, α = finiteNewtonMH(τ, ℓπₜ, ∇ₜ, Hₜ, nNewton[1], df, πₜargs...)
+        τpost[i] = πᵦargs[3] = τ
+        ᾱ[1] = (ᾱ[1]*(i-1) + α)/i # updating mean accept prob τ
+
+        # Sample β
+        β, α = finiteNewtonMH(β, ℓπᵦ, ∇ᵦ, Hᵦ, nNewton[2], df, πᵦargs...)
+        βpost[:,i] = πₜargs[3] = β
+        ᾱ[2] = (ᾱ[2]*(i-1) + α)/i # updating mean accept prob β
+
+    end
+
+    return (βpost[:,nBurnin+1:end], τpost[nBurnin+1:end], ᾱ)
+
+end
 
 # Simulate some NegativeBinomial regression data
 β = [1, -1, 0.2]
@@ -77,70 +137,3 @@ Accept prob of τ was $(round(ᾱ[2], digits = 3)) using $(nNewton[2]) Newton s
 chn = Chains([βpost' τpost],[:β₀, :β₁, :β₂, :τ])
 cor([βpost' τpost], dims = 1)
 plot(chn)
-
-"""
-    Gibbs sampling with finite step Newton for negative binomial regression:
-
-    yᵢ | β,τ ∼ NegativeBinomial(exp(τ), logit(xᵢ'β))
-
-    with prior
-
-    β ∼ N(μᵦ,Ωᵦ) and τ ∼ N(μₜ,σₜ)
-"""
-function PostSampNegBinReg(y, X, priorSet, algoSet)
-    
-    # Unpack algorithmic settings
-    nIter, fracBurnin, nNewton, df = algoSet
-    nBurnin = Int(floor(fracBurnin*nIter))
-    nIter += nBurnin
-
-    # Unpack prior settings
-    μᵦ, Ωᵦ, μₜ, σₜ = priorSet
-
-    # Initial values
-    τ = 1
-    β = zeros(size(X,2))
-
-    # Set up full conditional for β with gradient and Hessian functions using AD.
-    πᵦargs = [y,X,τ]
-    function ℓπᵦ(β, πᵦargs...)
-        p = exp.(X*β)./(1 .+ exp.(X*β))
-        logLik = sum( logpdf.(NegativeBinomial.(exp(τ), p), y) )
-        logPrior = logpdf(MvNormal(μᵦ, Ωᵦ), β)
-        return logLik + logPrior
-    end
-    ∇ᵦ(β,πᵦargs...) = ForwardDiff.gradient(β -> ℓπᵦ(β, πᵦargs...), β)
-    Hᵦ(β,πᵦargs...) = ForwardDiff.hessian(β -> ℓπᵦ(β, πᵦargs...), β)
-
-    # Set up full conditional for τ with gradient and Hessian functions using AD.
-    πₜargs = [y,X,β]
-    function ℓπₜ(τ, πₜargs...)
-        p = exp.(X*β)./(1 .+ exp.(X*β))
-        logLik = sum( logpdf.(NegativeBinomial.(exp(τ), p), y) )
-        logPrior = logpdf(Normal(μₜ,σₜ), τ)
-        return logLik + logPrior
-    end
-    ∇ₜ(τ,πₜargs...) = ForwardDiff.derivative(τ -> ℓπₜ(τ, πₜargs...), τ)
-    Hₜ(τ,πₜargs...) = ForwardDiff.derivative(τ -> ∇ₜ(τ,πₜargs...), τ)
-
-    # Set up storage 
-    βpost = zeros(size(X,2), nIter)
-    τpost = zeros(nIter)
-    ᾱ = zeros(2)  # Mean MH acceptance probability
-
-    for i = 1:nIter
-        # Sample τ
-        τ, α = finiteNewtonMH(τ, ℓπₜ, ∇ₜ, Hₜ, nNewton[1], df, πₜargs...)
-        τpost[i] = πᵦargs[3] = τ
-        ᾱ[1] = (ᾱ[1]*(i-1) + α)/i # updating mean accept prob τ
-
-        # Sample β
-        β, α = finiteNewtonMH(β, ℓπᵦ, ∇ᵦ, Hᵦ, nNewton[2], df, πᵦargs...)
-        βpost[:,i] = πₜargs[3] = β
-        ᾱ[2] = (ᾱ[2]*(i-1) + α)/i # updating mean accept prob β
-
-    end
-
-    return (βpost[:,nBurnin+1:end], τpost[nBurnin+1:end], ᾱ)
-
-end

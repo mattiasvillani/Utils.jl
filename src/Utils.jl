@@ -1,7 +1,7 @@
 module Utils
 
 # Python functions import
-using PyCall, LinearAlgebra, Distributions, Statistics, PDMats, ForwardDiff
+using PyCall, LinearAlgebra, Distributions, Statistics, PDMats, ForwardDiff, DataFrames
 
 include("Distr.jl") # some extra distributions
 include("Bayes.jl") # Bayesian inference utilities, e.g. posterior samplers.

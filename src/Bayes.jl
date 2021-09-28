@@ -2,16 +2,19 @@
 
 
 """
-    finiteNewtonMH(θₛ, ℓπ, ∇, H, nNewton, args...)
+    finiteNewtonMH(θₛ, ℓπ, ∇, H, nNewton, df, args...)
 
 Finite step Newton Metropolis-Hastings update a vector parameter
 
-- θₛ is the current value of the parameter vector θ
+- θₛ is the current value of the parameter **vector** θ
 - ℓπ(θ, πargs...) is the log posterior function
 - ∇(θ, πargs...) is the gradient function (perhaps obtained by automatic differentiation)
 - H(θ, πargs...) is the Hessian matrix function
 - nNewton is the number of Newton steps
 - df is the degrees of freedom in the multivariate student-t proposal
+- args are the arguments (data etc) needed to compute the log posterior ℓπ
+
+See also the method when θₛ is a scalar.
 """
 function finiteNewtonMH(θₛ::Vector, ℓπ, ∇, H, nNewton, df, πargs...)
 
@@ -47,9 +50,9 @@ function finiteNewtonMH(θₛ::Vector, ℓπ, ∇, H, nNewton, df, πargs...)
 end
 
 """
-    finiteNewtonMH(θₛ, ℓπ, ∇, H, nNewton, args...)
+    finiteNewtonMH(θₛ, ℓπ, ∇, H, nNewton, df, args...)
 
-Finite step Newton Metropolis-Hastings update for a scalar parameter
+Finite step Newton Metropolis-Hastings update for a **scalar** parameter
 
 - θₛ is the current value of the parameter vector θ
 - ℓπ(θ, πargs...) is the log posterior function
@@ -57,6 +60,9 @@ Finite step Newton Metropolis-Hastings update for a scalar parameter
 - H(θ, πargs...) is the Hessian matrix function
 - nNewton is the number of Newton steps
 - df is the degrees of freedom in the multivariate student-t proposal
+- args are the arguments (data etc) needed to compute the log posterior ℓπ
+
+See also the method when θₛ is a vector.
 """
 function finiteNewtonMH(θₛ::Real, ℓπ, ∇, H, nNewton, df, πargs...)
     
