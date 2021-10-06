@@ -126,6 +126,31 @@ function CovMatEquiCorr(σₓ, ρ, pBlock)
     return diagm(σₓ)*corrMat*diagm(σₓ)
 end
 
+""" 
+    ρ, σ = Cov2Corr(Σ) 
+
+Compute the correlation matrix `ρ` and vector standard deviations `σ` for the covariance matrix Σ.
+
+# Examples
+```julia-repl
+julia> Σ = CovMatEquiCorr([1,2,3], [0.7], [3]) # Covariance matrix with all corr = 0.7
+3×3 Matrix{Float64}:
+ 1.0  1.4  2.1
+ 1.4  4.0  4.2
+ 2.1  4.2  9.0
+
+julia> ρ, σ = Cov2Corr(Σ); ρ
+3×3 Matrix{Float64}:
+ 1.0  0.7  0.7
+ 0.7  1.0  0.7
+ 0.7  0.7  1.0
+```
+""" 
+function Cov2Corr(Σ)
+    StdDev = .√diag(Σ)
+    D = diagm(1 ./StdDev)
+    return D*Σ*D, StdDev
+end
 
 """
     plotFcnGrid(f, xGrid, xNames, fcnArgs...;ylabel="", title ="", levels = 10,fill=:viridis)
@@ -224,6 +249,6 @@ function plotClassifier2D(y, X, predictFunc; gridSize = [100,100],
     return p
 end
 
-export unpickle, invvech, invvech_byrow, CovMatEquiCorr, plotFcnGrid, plotClassifier2D
+export unpickle, invvech, invvech_byrow, CovMatEquiCorr, Cov2Corr, plotFcnGrid, plotClassifier2D
 
 end

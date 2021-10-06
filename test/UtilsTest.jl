@@ -15,4 +15,9 @@
     @test CovMat[1,3] == 0
     @test CovMat[1,2]/(√CovMat[1,1]*√CovMat[2,2]) ≈ ρ[1]
 
+    ρComputed, σComputed = Cov2Corr(CovMat);
+    @test ρComputed[1,2] ≈ ρ[1]
+    @test ρComputed[4,5] ≈ ρ[2]
+    @test σComputed[1] ≈ σₓ[1]
+
 end
