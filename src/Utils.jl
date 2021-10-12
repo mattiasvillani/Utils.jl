@@ -26,6 +26,22 @@ function unpickle(filename)
     return py"unpickle"(filename)
 end
 
+""" 
+    subscript(i::Integer) 
+
+Set up string with integer `i` as subscript (for printing). 
+
+From https://stackoverflow.com/questions/46671965/printing-variable-subscripts-in-julia 
+
+# Examples
+```julia-repl
+julia> println("Studio"*subscript(45))
+Studio₄₅
+```
+""" 
+subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in reverse(digits(i)))
+
+
 # invvech - inverse operation to the vech operator for symmetric matrices
 """
     invvech(v, p; fillupper = true)
@@ -249,6 +265,6 @@ function plotClassifier2D(y, X, predictFunc; gridSize = [100,100],
     return p
 end
 
-export unpickle, invvech, invvech_byrow, CovMatEquiCorr, Cov2Corr, plotFcnGrid, plotClassifier2D
+export unpickle, subscript, invvech, invvech_byrow, CovMatEquiCorr, Cov2Corr, plotFcnGrid, plotClassifier2D
 
 end
