@@ -41,8 +41,28 @@ Studio₄₅
 """ 
 subscript(i::Integer) = i<0 ? error("$i is negative") : join('₀'+d for d in reverse(digits(i)))
 
+""" 
+    vec(X) 
 
-# invvech - inverse operation to the vech operator for symmetric matrices
+Vectorize the matrix X by stacking columns on top of each other.
+
+Works also when X is a dataframe.
+
+# Examples
+```julia-repl
+julia> vec([1 3;2 4])
+4-element Vector{Int64}:
+ 1
+ 2
+ 3
+ 4
+```
+""" 
+function vec(X)
+    return Matrix(X)[:]
+end
+
+
 """
     invvech(v, p; fillupper = true)
 
@@ -265,6 +285,6 @@ function plotClassifier2D(y, X, predictFunc; gridSize = [100,100],
     return p
 end
 
-export unpickle, subscript, invvech, invvech_byrow, CovMatEquiCorr, Cov2Corr, plotFcnGrid, plotClassifier2D
+export unpickle, subscript, vec, invvech, invvech_byrow, CovMatEquiCorr, Cov2Corr, plotFcnGrid, plotClassifier2D
 
 end
