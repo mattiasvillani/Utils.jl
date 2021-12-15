@@ -46,5 +46,34 @@ TDist(μ, σ, ν) = LocationScale(μ, σ, TDist(ν))
 
 
 
-export ScaledInverseChiSq, TDist
+""" 
+    SimDirProcess(P₀, α, ϵ) 
+
+Simulates one realization from the Dirichlet Process DP(α⋅P₀) using the Stick-breaking construction.
+
+ϵ>0 is the remaining stick length when the simulation terminates. 
+
+# Examples
+```julia-repl
+julia> θ, π = SimDirProcess(Normal(), 2, 0.001);
+julia> plot(θ, cumsum(π), linetype = :steppost, label = nothing, xlab = "θ", ylab = "F(θ)")
+```
+""" 
+function SimDirProcess(P₀, α, ϵ)
+    remainStickLength = 1
+    θ = Float64[];
+    π = Float64[];
+    while remainStickLength > ϵ
+        θₕ = rand(P₀)
+        Vₕ = rand(Beta(1, α))
+        πₕ = Vₕ*remainStickLength
+        remainStickLength = remainStickLength*(1-Vₕ) 
+        push!(θ, θₕ)
+        push!(π, πₕ)
+    end
+    sortIdx = sortperm(θ)
+    return θ[sortIdx], π[sortIdx]
+end
+
+export ScaledInverseChiSq, TDist, SimDirProcess
 

@@ -2,4 +2,5 @@
 ```@docs
 TDist
 ScaledInverseChiSq 
+SimDirProcess
 ```
