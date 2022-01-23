@@ -1,6 +1,7 @@
 # Some distributions not available in Distributions.jl
 
 using Distributions: InverseGamma, LocationScale, TDist, pdf
+using ConjugatePriors: NormalInverseChisq
 using Statistics
 
 """ 
@@ -75,5 +76,5 @@ function SimDirProcess(P₀, α, ϵ)
     return θ[sortIdx], π[sortIdx]
 end
 
-export ScaledInverseChiSq, TDist, SimDirProcess
+export ScaledInverseChiSq, TDist, NormalInverseChisq, SimDirProcess
 

@@ -1,8 +1,13 @@
 module Utils
 
-# Python functions import
-using PyCall, LinearAlgebra, Distributions, Statistics, PDMats, ForwardDiff, DataFrames
+# Exporting all useful packages
+using Reexport
+@reexport using Plots, LinearAlgebra, Distributions, Statistics, DataFrames, RCall
+@reexport using LaTeXStrings
 
+using PyCall, PDMats
+
+include("PlotSettings.jl") # Color schemes and default plot settings
 include("Distr.jl") # some extra distributions
 include("Bayes.jl") # Bayesian inference utilities, e.g. posterior samplers.
 
@@ -67,29 +72,6 @@ function pad_digits(x)
         strs[i] = strs[i]*repeat("0",maxDigits-digits[i])
     end
     return strs
-end
-
-
-
-""" 
-    vec(X) 
-
-Vectorize the matrix X by stacking columns on top of each other.
-
-Works also when X is a dataframe.
-
-# Examples
-```julia-repl
-julia> vec([1 3;2 4])
-4-element Vector{Int64}:
- 1
- 2
- 3
- 4
-```
-""" 
-function vec(X)
-    return Matrix(X)[:]
 end
 
 
@@ -316,5 +298,6 @@ function plotClassifier2D(y, X, predictFunc; gridSize = [100,100],
 end
 
 export unpickle, subscript, pad_digits, vec, invvech, invvech_byrow, CovMatEquiCorr, Cov2Corr, plotFcnGrid, plotClassifier2D
+export colors
 
 end
