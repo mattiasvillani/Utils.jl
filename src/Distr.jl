@@ -84,7 +84,7 @@ end
 
 Define the Z(α, β, 0, 1)-distribution. 
 
-This special case of the Z-distribution is the same as log(x/(1-x)) for x ∼ Beta(α, β)
+This standardized case of the Z-distribution is the same as log(x/(1-x)) for x ∼ Beta(α, β)
 
 # Examples
 ```julia-repl
@@ -92,6 +92,10 @@ julia> zdist = ZDist(1/2, 1/2)
 julia> rand(zdist, 4)'
 1×4 adjoint(::Vector{Float64}) with eltype Float64:
  1.00851  0.640297  0.566234  2.16941
+julia> pdf(zdist, 1)
+julia> cdf(zdist, 1)
+julia> zdist_general = 3 + 2*ZDist(1/2, 1/2)
+julia> pdf(zdist_general, 1)
 ```
 """ 
 struct ZDist <: ContinuousUnivariateDistribution
@@ -109,23 +113,28 @@ function pdf(zdist::ZDist, x::Real)
 end
 
 function logpdf(zdist::ZDist, x::Real)
-    return -logbeta(zdist.α,zdist.β) + zdist.α*x - (zdist.α + zdist.β)*log(1 + exp(x))
+    return -logbeta(zdist.α, zdist.β) + zdist.α*x - (zdist.α + zdist.β)*log(1 + exp(x))
 end
 
 function cdf(zdist::ZDist, x::Real)
-    if zdist.α ≈ zdist.β ≈ 1/2 # Mixture approx of Z(1/2,1/2) for speed
-        cdf(MixtureModel([3.4236*TDist(10),1.8417*TDist(10)],[0.5414,1-0.5414]), x)
-    else
-        return quadgk(y -> pdf(zdist, y), -Inf, x, rtol=1e-8)[1]
-    end
+    return cdf(Beta(zdist.α, zdist.β), 1/(1 + exp(-x)))
 end
 
 function quantile(zdist::ZDist, p)
-    if zdist.α ≈ zdist.β ≈ 1/2 # Mixture approx of Z(1/2,1/2) for speed
-        quantile(MixtureModel([3.4236*TDist(10),1.8417*TDist(10)],[0.5414,1-0.5414]),p)
-    else
-        return find_zero(x -> cdf(zdist, x) - p, (-100, 100))
-    end
+    quantBeta = quantile(Beta(zdist.α, zdist.β), p)
+    return log(quantBeta/(1-quantBeta))    
+end
+
+function mean(zdist::ZDist)
+    return digamma(zdist.α) - digamma(zdist.β)
+end
+
+function var(zdist::ZDist)
+    return trigamma(zdist.α) + trigamma(zdist.β)
+end
+
+function std(zdist::ZDist)
+    return sqrt(trigamma(zdist.α) + trigamma(zdist.β))
 end
 
 """ 

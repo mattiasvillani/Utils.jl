@@ -1,6 +1,6 @@
 # Script for approximating the Z(α,β) distribution by a mixture.
 
-using Distributions, Distances, Optim
+using Distributions, Distances, Optim, Utils, SpecialFunctions
 
 figFolder = "/home/mv/Dropbox/Julia/dev/SpecLocalStat/scripts/figs/"
 
@@ -21,10 +21,12 @@ function distMix2Target(θ, targetDist, compDist, xGrid, distFunc)
     return evaluate(distFunc, pdf.(targetDist, xGrid), pdf.(dMix, xGrid) )
 end
 
-xGrid = -50:0.05:50
+α = β = 0.1
+targetDist = ZDist(α, β)
+stdev = sqrt(trigamma(α) + trigamma(β))
+xGrid = -5*stdev:0.05:5*stdev
 distFunc = Euclidean()
 distFunc = KLDivergence()
-targetDist = ZDist(1/2,1/2)
 symmetric = pdf(targetDist, -1) ≈ pdf(targetDist, 1)
 maxK = 4
 selQuants = [10.0^j for j ∈ -4:0.01:-2]
@@ -45,6 +47,7 @@ for K = 1:maxK
         optRes = maximize(θ -> -distMix2Target(θ, targetDist, compDist, xGrid, distFunc), θ₀);
         θopt = optRes.res.minimizer;
         μ = θopt[1:K]
+        println(μ)
         σ = exp.(θopt[(K+1):2K]);
         w = exp.(θopt[(2K+1):end]) ./ sum(exp.(θopt[(2K+1):end]));
         dMix = MixtureModel(σ .* compDist .+ μ, w)
@@ -67,3 +70,47 @@ for K = 1:maxK
 end
 plot(size = (1000, 800), q..., layout = (2,2))
 savefig(figFolder*"Quantiles.pdf")
+
+
+# Find mixture approx for all α=β
+distFunc = Euclidean()
+distFunc = KLDivergence()
+symmetric = pdf(targetDist, -1) ≈ pdf(targetDist, 1)
+K = 2
+selQuants = [10.0^j for j ∈ -4:0.01:-2]
+quants = zeros(length(selQuants), maxK)
+compDist = [TDist(10) for _ ∈ 1:K];
+p = []
+αgrid = 0.05:0.01:2
+nα = length(αgrid)
+optResAll = zeros(nα, 1 + 2*K + 1)
+for (i,α) = enumerate(αgrid)
+    stdev = sqrt(trigamma(α) + trigamma(β))
+    xGrid = -5*stdev:0.05:5*stdev
+    β = α
+    targetDist = ZDist(α, β)
+    θ₀ = [zeros(K);repeat([1/K],K)];
+    optRes = maximize(θ -> -distScaleMix2Target(θ, targetDist, compDist, xGrid, distFunc), θ₀);
+    θopt = optRes.res.minimizer;
+    dist = optRes.res.minimum;
+    σ = exp.(θopt[1:K]) 
+    w = exp.(θopt[(K+1):end]) ./ sum(exp.(θopt[(K+1):end]))
+    optResAll[i, :] = [α; σ; w; dist]
+    println(optResAll[i, :])
+    μ = zeros(K);
+    σ = exp.(θopt[1:K]);
+    w = exp.(θopt[(K+1):end]) ./ sum(exp.(θopt[(K+1):end]));
+    dMix = MixtureModel(σ .* compDist .+ μ, w)
+    quants[:,K] = quantile.(dMix, selQuants)
+    #quantile.(targetDist, selQuants)
+end
+
+plot(αgrid, optResAll[:,2], label = L"\sigma_1")
+plot!(αgrid, 0.5 .+ (1.35 ./αgrid).^(1), c = "red")
+
+plot(αgrid, optResAll[:,3], label = L"\sigma_2")
+plot!(αgrid, 0.5 .+ (0.42./αgrid).^(1.0), c = "red")
+
+
+plot(αgrid, optResAll[:,4], label = L"w_1")
+plot(αgrid, optResAll[:,5], label = L"w_2")
