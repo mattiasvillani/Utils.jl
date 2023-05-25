@@ -1,14 +1,20 @@
 @testset "Distr.jl" begin
-    
-    @test Distributions.var(TDist(3, 2, 5)) == 2^2*(5/(5-2))
-
-    @test Distributions.mean(ScaledInverseChiSq(10, 5)) == 5*(10/(10-2))
 
     zdist = ZDist(1/2,1/2)
-    @test Utils.cdf.(zdist,Utils.quantile.(zdist, 0.1:0.1:0.9)) ≈ 0.1:0.1:0.9
+    @test Utils.cdf.(zdist, Utils.quantile.(zdist, 0.1:0.1:0.9)) ≈ 0.1:0.1:0.9
 
     zdist = ZDist(3/2,3/2)
     @test Utils.cdf.(zdist,Utils.quantile.(zdist, 0.1:0.1:0.9)) ≈ 0.1:0.1:0.9
+
+    @test pdf(zdist, 1) ≈ exp(logpdf(zdist, 1))
+
+    @test cdf(zdist,-1) ≈ 1 - cdf(zdist, 1) # symmetry test
+
+    @test Utils.var(zdist) ≈ Utils.std(zdist).^2
+
+    @test Distributions.var(TDist(3, 2, 5)) == 2^2*(5/(5-2))
+
+    @test Distributions.mean(ScaledInverseChiSq(10, 5)) == 5*(10/(10-2))
 
     # Test if pdf of Gaussian Copula with Gaussian margins equals Multivariate Gaussian pdf
     μ₁ = 10; μ₂ = 0; σ₁ = 1; σ₂ = 3; σ12 = -1.9;
@@ -22,4 +28,5 @@
     @test pdf(GC, x) ≈ pdf(MvN, x)
 
     @test logpdf(GC, x) ≈ log(pdf(GC, x))
+
 end

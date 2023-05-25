@@ -1,5 +1,5 @@
 # Some distributions not available in Distributions.jl
-using Distributions, SpecialFunctions
+using Distributions, SpecialFunctions, LogExpFunctions 
 using Distributions: InverseGamma, LocationScale, TDist
 import Distributions: logpdf, pdf, cdf, quantile
 using Statistics
@@ -58,8 +58,11 @@ Simulates one realization from the Dirichlet Process DP(α⋅P₀) using the Sti
 
 # Examples
 ```julia-repl
-julia> θ, π = SimDirProcess(Normal(), 2, 0.001);
-julia> plot(θ, cumsum(π), linetype = :steppost, label = nothing, xlab = "θ", ylab = "F(θ)")
+julia> θ, π = SimDirProcess(Normal(), 5, 0.001);
+julia> plot(-3:0.01:3, cdf.(Normal(), -3:0.01:3), label = "base", xlab = "x", 
+    ylab = "F(x)", c = :red)
+julia> plot!(θ, cumsum(π), linetype = :steppost, xlab = "θ", 
+    ylab = "F(θ)", label = "realization")
 ```
 """ 
 function SimDirProcess(P₀, α, ϵ)
@@ -84,7 +87,9 @@ end
 
 Define the Z(α, β, 0, 1)-distribution. 
 
-This standardized case of the Z-distribution is the same as log(x/(1-x)) for x ∼ Beta(α, β)
+This standardized case of the Z-distribution is the same as log(x/(1-x)) for x ∼ Beta(α, β).
+The general Z(α, β, μ, σ) is obtained by the Distributions.jl location-scale construction:
+μ + σ*Z(α, β, 0, 1)
 
 # Examples
 ```julia-repl
@@ -95,7 +100,7 @@ julia> rand(zdist, 4)'
 julia> pdf(zdist, 1)
 julia> cdf(zdist, 1)
 julia> zdist_general = 3 + 2*ZDist(1/2, 1/2)
-julia> pdf(zdist_general, 1)
+julia> pdf(zdist_general, 1)zdist = ZDist(3/2,3/2)
 ```
 """ 
 struct ZDist <: ContinuousUnivariateDistribution
@@ -105,24 +110,26 @@ end
 
 function rand(zdist::ZDist, n::Int = 1)
     x = rand(Beta(zdist.α, zdist.β), n)
-    return log.(x./(1 .- x))
+    return logit.(x) # this is log.(x./(1 .- x))
 end
 
+
 function pdf(zdist::ZDist, x::Real)
-    return (1/beta(zdist.α,zdist.β))*(exp(x)^zdist.α)/(1 + exp(x))^(zdist.α + zdist.β)
+    return (logistic(x)^zdist.α * logistic(-x)^zdist.β)/beta(zdist.α,zdist.β)
 end
 
 function logpdf(zdist::ZDist, x::Real)
-    return -logbeta(zdist.α, zdist.β) + zdist.α*x - (zdist.α + zdist.β)*log(1 + exp(x))
+    return -logbeta(zdist.α, zdist.β) + zdist.α*x - (zdist.α + zdist.β)*log1pexp(x) 
+                                                            # log1pexp(x) = log(1 + exp(x))
 end
 
 function cdf(zdist::ZDist, x::Real)
-    return cdf(Beta(zdist.α, zdist.β), 1/(1 + exp(-x)))
+    return cdf(Beta(zdist.α, zdist.β), logistic(x))
 end
 
 function quantile(zdist::ZDist, p)
     quantBeta = quantile(Beta(zdist.α, zdist.β), p)
-    return log(quantBeta/(1-quantBeta))    
+    return logit(quantBeta)  
 end
 
 function mean(zdist::ZDist)
@@ -230,5 +237,4 @@ function rand(d::GaussianCopula, n::Int)
     return X
 end
 
-export ScaledInverseChiSq, TDist, NormalInverseChisq, SimDirProcess
-export ZDist, GaussianCopula
+

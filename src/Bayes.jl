@@ -97,4 +97,3 @@ function finiteNewtonMH(θₛ::Real, ℓπ, ∇, H, nNewton, df, πargs...)
 
 end
 
-export finiteNewtonMH
