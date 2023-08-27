@@ -88,6 +88,7 @@ function CovMatEquiCorr(σₓ, ρ, pBlock)
     p = sum(pBlock)
     corrMat = zeros(p,p)
     count = 0 
+    println(length(ρ))
     for i in 1:length(ρ)
         idx = (1 + count):(count + pBlock[i])
         corrMat[idx, idx] = ρ[i]*ones(pBlock[i], pBlock[i])

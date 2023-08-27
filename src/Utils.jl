@@ -2,8 +2,8 @@ module Utils
 
 # Exporting
 using Reexport
-@reexport using Plots, LinearAlgebra, Distributions, Statistics, DataFrames, RCall
-@reexport using LaTeXStrings
+using Plots, LinearAlgebra, Distributions, Statistics, DataFrames, RCall
+using LaTeXStrings
 using PyCall, PDMats, QuadGK, Roots
 
 

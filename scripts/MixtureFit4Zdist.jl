@@ -1,6 +1,7 @@
 # Script for approximating the Z(α,β) distribution by a mixture.
 
-using Distributions, Distances, Optim, Utils, SpecialFunctions
+using Distributions, Distances, Optim, Utils, SpecialFunctions, Plots
+using LaTeXStrings 
 
 figFolder = "/home/mv/Dropbox/Julia/dev/SpecLocalStat/scripts/figs/"
 
@@ -33,7 +34,7 @@ selQuants = [10.0^j for j ∈ -4:0.01:-2]
 quants = zeros(length(selQuants),maxK)
 p = []
 for K = 1:maxK
-    compDist = [TDist(10) for _ ∈ 1:K];
+    compDist = [TDist(100) for _ ∈ 1:K];
     if symmetric
         θ₀ = [zeros(K);repeat([1/K],K)];
         optRes = maximize(θ -> -distScaleMix2Target(θ, targetDist, compDist, xGrid, distFunc), θ₀);
@@ -41,7 +42,7 @@ for K = 1:maxK
         μ = zeros(K);
         σ = exp.(θopt[1:K]);
         w = exp.(θopt[(K+1):end]) ./ sum(exp.(θopt[(K+1):end]));
-        dMix = MixtureModel(σ .* compDist, w)
+        global dMix = MixtureModel(σ .* compDist, w)
     else
         θ₀ = [zeros(2K);repeat([1/K],K)];
         optRes = maximize(θ -> -distMix2Target(θ, targetDist, compDist, xGrid, distFunc), θ₀);

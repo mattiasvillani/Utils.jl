@@ -6,7 +6,7 @@
     @test invvech_byrow([11,21,22], 2) == [11 21;21 22]
     @test invvech_byrow([11,21,22,31,32,33], 3) == [11 21 31;21 22 32;31 32 33]
 
-    @test CovMatEquiCorr([1,1], [0,0], [1,1]) == I(2)
+    @test CovMatEquiCorr([1.0,1.0], [0.0,0.0], [1,1]) == I(2)
 
     σₓ = rand(5)
     ρ = rand(2)

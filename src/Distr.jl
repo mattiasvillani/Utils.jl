@@ -1,7 +1,6 @@
-# Some distributions not available in Distributions.jl
-using Distributions, SpecialFunctions, LogExpFunctions 
+using Distributions, SpecialFunctions, LogExpFunctions, Random 
 using Distributions: InverseGamma, LocationScale, TDist
-import Distributions: logpdf, pdf, cdf, quantile
+import Distributions: logpdf, pdf, cdf, quantile, std, mean
 using Statistics
 import Base.rand
 include("normalinvchisq.jl") # Taken from ConjugatePriors.jl (which downgrades too many packages)
@@ -110,11 +109,15 @@ end
 
 ZDist(α::Real, β::Real, μ::Real, σ::Real) = μ + σ*ZDist(α, β)
 
-function rand(zdist::ZDist, n::Int = 1)
-    x = rand(Beta(zdist.α, zdist.β), n)
+# function rand(zdist::ZDist, n::Int = 1)
+#     x = rand(Beta(zdist.α, zdist.β), n)
+#     return logit.(x) # this is log.(x./(1 .- x))
+# end
+
+function rand(rng::Random.AbstractRNG, d::ZDist)
+    x = rand(Beta(d.α, d.β))
     return logit.(x) # this is log.(x./(1 .- x))
 end
-
 
 function pdf(zdist::ZDist, x::Real)
     return (logistic(x)^zdist.α * logistic(-x)^zdist.β)/beta(zdist.α,zdist.β)
@@ -125,13 +128,43 @@ function logpdf(zdist::ZDist, x::Real)
                                                             # log1pexp(x) = log(1 + exp(x))
 end
 
-function cdf(zdist::ZDist, x::Real)
-    return cdf(Beta(zdist.α, zdist.β), logistic(x))
-end
+autodiff = true
+if autodiff == false
 
-function quantile(zdist::ZDist, p)
-    quantBeta = quantile(Beta(zdist.α, zdist.β), p)
-    return logit(quantBeta)  
+    function cdf(zdist::ZDist, x::Real)
+        # return cdf(Beta(zdist.α, zdist.β), logistic(x)) # no love from autodiff + slower
+        return beta_inc(zdist.α, zdist.β, logistic(x))[1]
+    end
+
+    function quantile(zdist::ZDist, p)
+        quantBeta = quantile(Beta(zdist.α, zdist.β), p)
+        return logit(quantBeta)  
+    end
+
+else # autodiff does not work with beta_inc
+
+    function cdf(zdist::ZDist, x::Real)
+        if zdist.α ≈ zdist.β ≈ 1/2 # Mixture approx of Z(1/2,1/2) for speed
+            cdf(MixtureModel([3.4236*TDist(10),1.8417*TDist(10)],[0.5414,1-0.5414]), x)
+        elseif zdist.α ≈ zdist.β ≈ 1 # Mixture approx of Z(1,1) for speed
+            cdf(MixtureModel([3.91662*Normal(),20.6839*Normal(),10.3208*Normal()],
+            [0.1719,0.3198, 1-(0.1719+0.3198)]), x)
+        else
+            return quadgk(y -> pdf(zdist, y), -Inf, x, rtol=1e-8)[1]
+        end
+    end
+
+    function quantile(zdist::ZDist, p)
+        if zdist.α ≈ zdist.β ≈ 1/2 # Mixture approx of Z(1/2,1/2) for speed
+            quantile(MixtureModel([3.4236*TDist(10),1.8417*TDist(10)],[0.5414,1-0.5414]),p)
+        elseif zdist.α ≈ zdist.β ≈ 1 # Mixture approx of Z(1,1) for speed
+            quantile(MixtureModel([3.91662*Normal(),20.6839*Normal(),10.3208*Normal()],
+            [0.1719,0.3198, 1-(0.1719+0.3198)]), p)
+        else
+            return find_zero(x -> cdf(zdist, x) - p, (-100, 100))
+        end
+    end
+
 end
 
 function mean(zdist::ZDist)
@@ -166,14 +199,15 @@ julia> GC = GaussianCopula(CorrMat, f)
 ```
 """ 
 mutable struct GaussianCopula <: ContinuousMultivariateDistribution
-    CorrMat::PDMat
+    CorrMat::Matrix
     f::Vector{UnivariateDistribution}
 end
 
-GaussianCopula(CorrMat::PDMat, f::UnivariateDistribution) = GaussianCopula(CorrMat, 
+GaussianCopula(CorrMat::Matrix, f::UnivariateDistribution) = GaussianCopula(CorrMat, 
     [f for _ in 1:size(CorrMat,1)])
 GaussianCopula(f::Vector{UnivariateDistribution}) = GaussianCopula(1.0*I(length(f)), f)
 
+length(d::GaussianCopula) = size(d.CorrMat)[1]
 
 """ 
     pdf(d:GaussianCopula, x)
@@ -216,7 +250,7 @@ function logpdf(d::GaussianCopula, x::AbstractVector{<:Real})
     return -logdet(L) + 0.5*q'*(I(length(q)) - CorrMatInv)*q + sum(logpdf.(d.f, x))
 end
 
-function rand(d::GaussianCopula)
+function rand(rng::Random.AbstractRNG, d::GaussianCopula)
     p = size(d.CorrMat,1)
     if !isdiag(d.CorrMat)
         u = cdf.(Normal(), rand(MvNormal(d.CorrMat)))
@@ -234,7 +268,7 @@ Simulate from a Gaussian copula with correlation matrix `CorrMat` and marginal d
 
 See also [`pdf(d:GaussianCopula, x)`](@ref).
 """
-function rand(d::GaussianCopula, n::Int)
+function rand(rng::Random.AbstractRNG, d::GaussianCopula, n::Int)
     p = size(d.CorrMat,1)
     X = zeros(p,n)
     for i in 1:n

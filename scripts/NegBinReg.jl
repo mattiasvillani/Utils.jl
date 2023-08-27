@@ -76,12 +76,12 @@ end
 τ = 1
 n = 200
 X = [ones(n) randn(n,2)]
-p = exp.(X*β)./(1 .+ exp.(X*β))
+p = 1 ./ (1 .+ exp.(-X*β))
 y = [rand(NegativeBinomial(exp(τ),p[i])) for i ∈ 1:n]
 scatter(X[:,2],y, label = "data", ylabel = L"y", xlabel = L"x_1", color = :black)
 
 # Algorithmic settings
-nIter = 1000
+nIter = 10000
 fracBurnin = 0.1
 nNewton = [1,1] # Number of Newton steps for τ and β
 df = 10         # Degrees of freedom for t-distribution proposal
