@@ -110,11 +110,6 @@ end
 
 ZDist(α::Real, β::Real, μ::Real, σ::Real) = μ + σ*ZDist(α, β)
 
-# function rand(zdist::ZDist, n::Int = 1)
-#     x = rand(Beta(zdist.α, zdist.β), n)
-#     return logit.(x) # this is log.(x./(1 .- x))
-# end
-
 function rand(rng::Random.AbstractRNG, d::ZDist)
     x = rand(Beta(d.α, d.β))
     return logit.(x) # this is log.(x./(1 .- x))
@@ -129,43 +124,13 @@ function logpdf(zdist::ZDist, x::Real)
                                                             # log1pexp(x) = log(1 + exp(x))
 end
 
-autodiff = false
-if autodiff == false
+function cdf(zdist::ZDist, x::Real)
+    return beta_inc(zdist.α, zdist.β, logistic(x))[1]
+end
 
-    function cdf(zdist::ZDist, x::Real)
-        # return cdf(Beta(zdist.α, zdist.β), logistic(x)) # no love from autodiff + slower
-        return beta_inc(zdist.α, zdist.β, logistic(x))[1]
-    end
-
-    function quantile(zdist::ZDist, p)
-        quantBeta = quantile(Beta(zdist.α, zdist.β), p)
-        return logit(quantBeta)  
-    end
-
-else # autodiff does not work with beta_inc
-
-    function cdf(zdist::ZDist, x::Real)
-        if zdist.α ≈ zdist.β ≈ 1/2 # Mixture approx of Z(1/2,1/2) for speed
-            cdf(MixtureModel([3.4236*TDist(10),1.8417*TDist(10)],[0.5414,1-0.5414]), x)
-        elseif zdist.α ≈ zdist.β ≈ 1 # Mixture approx of Z(1,1) for speed
-            cdf(MixtureModel([3.91662*Normal(),20.6839*Normal(),10.3208*Normal()],
-            [0.1719,0.3198, 1-(0.1719+0.3198)]), x)
-        else
-            return quadgk(y -> pdf(zdist, y), -Inf, x, rtol=1e-8)[1]
-        end
-    end
-
-    function quantile(zdist::ZDist, p)
-        if zdist.α ≈ zdist.β ≈ 1/2 # Mixture approx of Z(1/2,1/2) for speed
-            quantile(MixtureModel([3.4236*TDist(10),1.8417*TDist(10)],[0.5414,1-0.5414]),p)
-        elseif zdist.α ≈ zdist.β ≈ 1 # Mixture approx of Z(1,1) for speed
-            quantile(MixtureModel([3.91662*Normal(),20.6839*Normal(),10.3208*Normal()],
-            [0.1719,0.3198, 1-(0.1719+0.3198)]), p)
-        else
-            return find_zero(x -> cdf(zdist, x) - p, (-100, 100))
-        end
-    end
-
+function quantile(zdist::ZDist, p)
+    quantBeta = quantile(Beta(zdist.α, zdist.β), p)
+    return logit(quantBeta)  
 end
 
 function mean(zdist::ZDist)
@@ -200,11 +165,11 @@ julia> GC = GaussianCopula(CorrMat, f)
 ```
 """ 
 mutable struct GaussianCopula <: ContinuousMultivariateDistribution
-    CorrMat::Matrix
+    CorrMat::PDMat
     f::Vector{UnivariateDistribution}
 end
 
-GaussianCopula(CorrMat::Matrix, f::UnivariateDistribution) = GaussianCopula(CorrMat, 
+GaussianCopula(CorrMat::PDMat, f::UnivariateDistribution) = GaussianCopula(CorrMat, 
     [f for _ in 1:size(CorrMat,1)])
 GaussianCopula(f::Vector{UnivariateDistribution}) = GaussianCopula(1.0*I(length(f)), f)
 
@@ -278,4 +243,34 @@ function rand(rng::Random.AbstractRNG, d::GaussianCopula, n::Int)
     return X
 end
 
+""" 
+    PGDistOneParam(b, nterms)
+
+Polya-gamma distribution with one parameter and nterms in the tructation of the pdf. 
+
+If `y` is unspecified, compute the Bar index between all pairs of columns of `x`. 
+
+# Examples
+```julia-repl
+julia> d = PGDistOneParam(1, 10)
+julia> pdf(d, 1.1)
+```
+""" 
+struct PGDistOneParam <: ContinuousUnivariateDistribution
+    b::Real
+    nterms::Int
+end
+
+function pdf(d::PGDistOneParam, x::Real)
+    summa = 0
+    for n = 0:d.nterms
+        summa += (-1)^n * ( ( gamma(n+d.b)*(2*n + d.b) ) / ( gamma(n+1)*sqrt(2π*x^3) ) )*
+            exp(-(2*n+d.b)^2/(8*x))
+    end
+    return (2^(d.b-1)/gamma(d.b))*summa
+end
+
+function logpdf(d::PGDistOneParam, x::Real)
+    return log(pdf(d, x))
+end
 

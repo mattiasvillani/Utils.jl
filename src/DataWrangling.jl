@@ -1,4 +1,5 @@
-# Importing the pickle in Python using PyCall.jl #FIXME: This needs to be executed manually. What is going on?
+# Importing the pickle in Python using PyCall.jl #FIXME: This needs to be executed manually. What is going on? 
+# I think this is obsolete now, there is a package with pickle?
 py"""
 import pickle
 """
