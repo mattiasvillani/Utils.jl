@@ -1,7 +1,6 @@
 module Utils
 
 # Exporting
-using Reexport, Revise
 using Plots, LinearAlgebra, Distributions, Statistics, DataFrames, RCall
 using LaTeXStrings, KernelDensity
 using PyCall, PDMats, QuadGK, Roots
