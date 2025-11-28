@@ -94,3 +94,45 @@ function plotClassifier2D(y, X, predictFunc; gridSize = [100,100],
 
     return p
 end
+
+
+""" 
+    plot_braces!(x, y, width, height, up = true, horizontal = true) 
+
+Plots curly braces with tip at point (`x`,`y`) with braces total width of `width` and `height`. Accepts additional keywords arguments for plot styling. If `up` is true, the braces point upward. If `horizontal` = false, the braces are vertical.
+
+# Examples
+```julia-repl
+julia> plot(-2π:0.01:2π, sin.(-2π:0.01:2π))
+julia> plot_braces!(π/2, 1, 2, 0.1; lw = 1, color = :black) 
+julia> annotate!(π/2, 1.15, text(L"f(1.57) = 1", :black, :middle, 8))  
+```
+""" 
+function plot_braces!(x, y, width, height, up = true, horizontal = true; plotSettings...)
+
+    if !up
+        height = -height
+    end
+    if !horizontal
+        width = -width
+    end
+    if horizontal
+        # left brace
+        bezxl = x .- [width/2, width/2, 0, 0]
+        bezyl = y .+ [height, 0, height, 0]
+        # right brace
+        bezxr = x .+ [0, 0, width/2, width/2]
+        bezyr = y .+ [0, height, 0, height]
+    else
+        # upper brace
+        bezxl = x .+ [height, 0, height, 0]
+        bezyl = y .+ [width/2, width/2, 0, 0]
+        # lower brace
+        bezxr = x .+ [0, height, 0, height]
+        bezyr = y .- [0, 0, width/2, width/2]
+    end
+
+    curves!(bezxl, bezyl; plotSettings...)
+    curves!(bezxr, bezyr;  plotSettings...)
+
+end
