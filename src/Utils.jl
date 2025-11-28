@@ -3,7 +3,7 @@ module Utils
 # Exporting
 using Plots, LinearAlgebra, Distributions, Statistics, DataFrames, RCall
 using LaTeXStrings, KernelDensity
-using PDMats, QuadGK, Roots 
+using PDMats
 
 
 include("PlotSettings.jl") # Color schemes and default plot settings
