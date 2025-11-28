@@ -14,7 +14,7 @@ Defines the Scaled inverse Chi2 distribution with location ν and scale τ.
 This is a convenience function that is just calling InverseGamma(ν/2,ν*τ²/2) 
 
 # Examples
-```jldoctest
+```julia-repl
 julia> using Statistics: mean;
 julia> using Distributions: pdf;
 julia> dist = ScaledInverseChiSq(10,3^2);
@@ -35,7 +35,7 @@ Defines the three parameter version of the Student-t distribution.
 The distribution is parameterized so that the variance is σ²ν/(ν-2). The distribution is constructed by extending the standard student-t in Distributions.jl using the `LocationScale` construction in that same package. 
 
 # Examples
-```jldoctest
+```julia-repl
 julia> using Statistics: mean;
 julia> using Distributions: pdf;
 julia> dist = TDist(1, 2, 5)
@@ -83,73 +83,6 @@ end
 
 
 """ 
-    ZDist(α, β) 
-
-Define the Z(α, β, 0, 1)-distribution. 
-
-This standardized case of the Z-distribution is the same as log(x/(1-x)) for x ∼ Beta(α, β).
-The general Z(α, β, μ, σ) is obtained by the Distributions.jl location-scale construction:
-μ + σ*Z(α, β)
-
-# Examples
-```julia-repl
-julia> zdist = ZDist(1/2, 1/2)
-julia> rand(zdist, 4)'
-1×4 adjoint(::Vector{Float64}) with eltype Float64:
- 1.00851  0.640297  0.566234  2.16941
-julia> pdf(zdist, 1)
-julia> cdf(zdist, 1)
-julia> zdist_general = 3 + 2*ZDist(1/2, 1/2)
-julia> pdf(zdist_general, 1)zdist = ZDist(3/2,3/2)
-```
-""" 
-struct ZDist <: ContinuousUnivariateDistribution
-    α::Real
-    β::Real
-end
-
-ZDist(α::Real, β::Real, μ::Real, σ::Real) = μ + σ*ZDist(α, β)
-
-function rand(rng::Random.AbstractRNG, d::ZDist)
-    x = rand(Beta(d.α, d.β))
-    return logit.(x) # this is log.(x./(1 .- x))
-end
-
-function pdf(zdist::ZDist, x::Real)
-    return (logistic(x)^zdist.α * logistic(-x)^zdist.β)/beta(zdist.α,zdist.β)
-end
-
-function logpdf(zdist::ZDist, x::Real)
-    return -logbeta(zdist.α, zdist.β) + zdist.α*x - (zdist.α + zdist.β)*log1pexp(x) 
-                                                            # log1pexp(x) = log(1 + exp(x))
-end
-
-function cdf(zdist::ZDist, x::Real)
-    return beta_inc(zdist.α, zdist.β, logistic(x))[1]
-end
-
-function quantile(zdist::ZDist, p)
-    quantBeta = quantile(Beta(zdist.α, zdist.β), p)
-    return logit(quantBeta)  
-end
-
-function mean(zdist::ZDist)
-    return digamma(zdist.α) - digamma(zdist.β)
-end
-
-function var(zdist::ZDist)
-    return trigamma(zdist.α) + trigamma(zdist.β)
-end
-
-function std(zdist::ZDist)
-    return sqrt(trigamma(zdist.α) + trigamma(zdist.β))
-end
-
-function params(zdist::ZDist)
-    return zdist.α, zdist.β
-end
-
-""" 
     GaussianCopula(CorrMat, f)
 
 Construct a Gaussian Copula with correlation matrix `CorrMat` and marginal distributions given by the elements in the vector of distributions in `f`. 
@@ -157,7 +90,7 @@ Construct a Gaussian Copula with correlation matrix `CorrMat` and marginal distr
 If `f` is a singleton, then this distribution is used for all margins.
 
 # Examples
-```doctests 
+```julia-repl 
 julia> using PDMats
 julia> f = [Normal(2, 3), Normal()]
 julia> CorrMat = PDMat([1 -0.8; -0.8 1])
@@ -182,7 +115,7 @@ Compute probability density at `x` for the Gaussian copula with correlation matr
 
 # Examples
 The density of the Gaussian copula with Gaussian margins is:
-```doctests 
+```julia-repl 
 julia> f = [Normal(2, 3), Normal()]
 julia> CorrMat = PDMat([1 -0.8; -0.8 1])
 julia> GC = GaussianCopula(CorrMat, f)

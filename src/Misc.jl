@@ -76,7 +76,11 @@ function find_max_matrix(matrix, k)
     return CartesianIndices(size(matrix))[sorted_indices[1:k]]
 end
 
+""" 
+    ConstructOptimalSubplot(NumberOfPlots) 
 
+Silly function that returns the 'optimal' number of rows and columns for a subplot given the number of plots.
+""" 
 function ConstructOptimalSubplot(NumberOfPlots)
 
     # Given a number of plots, this function determines the 'optimal' number of
@@ -105,5 +109,10 @@ function ConstructOptimalSubplot(NumberOfPlots)
 
 end
 
+""" 
+    quantile_multidim(A, p; dims, kwargs...)
+
+Compute quantiles along specified dimensions of multidimensional array `A`.
+""" 
 quantile_multidim(A, p; dims, kwargs...) = mapslices(x -> quantile(x, p; kwargs...), 
     A; dims)

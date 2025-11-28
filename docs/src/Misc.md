@@ -1,10 +1,9 @@
 # Misc
 ```@docs
-unpickle
-subscript
-pad_digits
-CovMatEquiCorr
-Cov2Corr
-plotFcnGrid
-plotClassifier2D
+quantile_multidim
+find_min_matrix
+find_max_matrix
+ConstructOptimalSubplot
+plot_braces!
 ```
+

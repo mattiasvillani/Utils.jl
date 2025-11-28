@@ -10,7 +10,7 @@ include("PlotSettings.jl") # Color schemes and default plot settings
 
 include("Distr.jl") # some extra distributions
 export ScaledInverseChiSq, TDist, NormalInverseChisq
-export ZDist, GaussianCopula
+export GaussianCopula
 export PGDistOneParam
 export SimDirProcess
 
