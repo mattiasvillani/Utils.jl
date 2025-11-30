@@ -5,8 +5,8 @@ using Plots, LinearAlgebra, Distributions, Statistics, DataFrames
 using LaTeXStrings, KernelDensity
 using PDMats
 
-
 include("PlotSettings.jl") # Color schemes and default plot settings
+export mvcolors
 
 include("Distr.jl") # some extra distributions
 export ScaledInverseChiSq, TDist, NormalInverseChisq
